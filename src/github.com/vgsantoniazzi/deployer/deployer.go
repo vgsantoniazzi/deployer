@@ -1,37 +1,60 @@
-﻿package deployer
+﻿package main
 
 import (
   "log"
   "os"
+  "strings"
+  "github.com/vgsantoniazzi/deployer/parser"
   "golang.org/x/crypto/ssh"
 )
 
 func main() {
-  if len(os.Args) != 5 {
-    log.Fatalln("usage: deployer <username> <password> <host>:<port> <cmd>")
-  }
+  RunRemote(Commands())
+}
 
-  clientConfig := &ssh.ClientConfig{
-    User: os.Args[1],
-    Auth: []ssh.AuthMethod{
-      ssh.Password(os.Args[2]),
-    },
+func RunRemote(commands []string) {
+  if err := Session().Run(strings.Join(commands, " && ")); err != nil {
+    panic("Failed to run: " + err.Error())
   }
+}
 
-  client, err := ssh.Dial("tcp", os.Args[3], clientConfig)
-  if err != nil {
-    panic("Failed to dial: " + err.Error())
-  }
-  session, err := client.NewSession()
+func Session() (*ssh.Session) {
+  session, err := Client().NewSession()
   if err != nil {
     panic("Failed to create session: " + err.Error())
   }
-  defer session.Close()
 
   session.Stdout = os.Stdout
   session.Stderr = os.Stderr
+  return session
+}
 
-  if err := session.Run(os.Args[4]); err != nil {
-  panic("Failed to run: " + err.Error())
+func Client() (*ssh.Client) {
+  client, err := ssh.Dial("tcp", Auth().Host +":"+ Auth().Port, ClientConfig())
+  if err != nil {
+    panic("Failed to dial: " + err.Error())
+  }
+  return client
+}
+
+func ClientConfig() (*ssh.ClientConfig) {
+  return &ssh.ClientConfig{
+    User: Auth().Username,
+    Auth: []ssh.AuthMethod{
+      ssh.Password(Auth().Password),
+    },
   }
 }
+
+func Auth()(*parser.Auth) {
+  return parser.Access(os.Args[1])
+}
+
+func Commands() ([]string) {
+  if len(os.Args) < 2 || !strings.Contains(os.Args[1], ".yml") {
+    log.Fatalln("usage: deployer path/to/file.yml")
+  }
+  return parser.Commands(os.Args[1])
+}
+
+

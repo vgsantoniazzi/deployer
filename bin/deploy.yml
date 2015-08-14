@@ -1,0 +1,8 @@
+﻿auth:
+  username: root
+  password: root
+  host: 127.0.0.1
+  port: 22
+commands:
+  - whoami
+  - ls
