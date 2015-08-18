@@ -6,4 +6,4 @@ Copy `bin/deployer` to your `usr/bin`, write a `.yml` with credential and comman
 
 use: `deployer deploy.yml`
 
-IMPORTANT: Be carefuly with server credentials!
+IMPORTANT: Be careful with server credentials!
